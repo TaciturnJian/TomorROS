@@ -1,0 +1,19 @@
+# visual studio and vscode
+.vs/
+.vscode/
+CMakeSettings.json
+
+# clion
+.idea/
+
+# build result
+[Oo]ut/
+[Bb]uild/
+
+# ROS 
+devel/
+src/CMakeLists.txt
+.catkin_workspace
+
+# Doxygen
+Doxyfile
