@@ -17,3 +17,6 @@ src/CMakeLists.txt
 
 # Doxygen
 Doxyfile
+
+# LangYa
+LangYa
