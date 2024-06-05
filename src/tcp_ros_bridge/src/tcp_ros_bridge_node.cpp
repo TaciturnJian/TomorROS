@@ -11,19 +11,20 @@ int main(int argc, char** argv)
 {
     const std::string app_name{ "trb" };
 
-    if (!InitializeGlobalLogger(app_name))
-        return -1;
+    if (!InitializeGlobalLogger(app_name)) return -1;
 
     // 初始化 tcp bridge
-/*     using tcp_bridge_flow_type = SyncCommunicationPlanner<TCPSocketMaker, NaviCommandMessage, NaviControlMessage>;
+    using tcp_bridge_flow_type = SyncCommunicationPlanner<TCPSocketMaker, NaviCommandMessage, NaviControlMessage>;
     tcp_bridge_flow_type tcp_bridge_flow{};
     {
         const auto maker_handle = std::make_shared<TCPSocketMaker>();
         maker_handle->Parameters.RemoteEndpoints.emplace_back(
             boost::asio::ip::tcp::endpoint{ boost::asio::ip::address_v4::from_string("127.0.0.1"), 8989 });
         tcp_bridge_flow.Acceptor = maker_handle;
+        tcp_bridge_flow.ReaderDestination = std::make_shared<EmptyDestinationNode<NaviCommandMessage>>();
     }
-    if (!tcp_bridge_flow.Check()) return -1; */
+
+    if (!tcp_bridge_flow.Check()) return -1;
 
     // 初始化 ros
     ros::init(argc, argv, "tcp_ros_bridge_node");
@@ -34,7 +35,7 @@ int main(int argc, char** argv)
 
     tf::Taskflow taskflow;
 
-    //tcp_bridge_flow.Plan(taskflow);
+    tcp_bridge_flow.Plan(taskflow);
     taskflow.emplace(
         [&publisher, &ros_done]
         {
@@ -53,13 +54,12 @@ int main(int argc, char** argv)
             }
 
             ros_done = true;
-        })
-        .name("Publisher");
-    /*     taskflow.emplace([&ros_done, &tcp_bridge_flow]
-            {
-                while (!ros_done && !tcp_bridge_flow.Done) std::this_thread::sleep_for(std::chrono::seconds{ 2 });
-            })
-            .name("Observer"); */
+        }).name("Publisher");
+
+    taskflow.emplace([&ros_done, &tcp_bridge_flow]
+        {
+            while (!ros_done && !tcp_bridge_flow.Done) std::this_thread::sleep_for(std::chrono::seconds{ 2 });
+        }).name("Observer");
 
     tf::Executor{}.run(taskflow).wait();
 
